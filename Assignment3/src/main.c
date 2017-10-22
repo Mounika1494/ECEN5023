@@ -99,10 +99,9 @@ int main(void)
 {
   /* Chip errata */
   CHIP_Init();
-CMU_Setup();
-setupI2C();
+  CMU_Setup();
+  setupI2C();
   GPIO_Setup();
-//GPIOINT_Setup();
   i2c_TSL2561_Setup();
 }
 

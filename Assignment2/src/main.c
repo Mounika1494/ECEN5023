@@ -65,7 +65,7 @@ int main(void)
      {
 	calibrate();
      }
-     CMU_Setup();
+    CMU_Setup();
     GPIO_Setup();
     ACMP_Setup();
     LETIMER0_Setup();
@@ -74,6 +74,7 @@ int main(void)
     	sleep();
     }
 }
+
 /***** enabling the clocks required*****/
 void CMU_Setup()
 {
@@ -93,6 +94,7 @@ void CMU_Setup()
 	    CMU_ClockEnable(cmuClock_LETIMER0, false);
 	    CMU_ClockEnable(cmuClock_ACMP0, false);
 }
+
 void LETIMER0_Setup(void)
 {
 	//set le timer
@@ -145,6 +147,7 @@ void LETIMER0_Setup(void)
     NVIC_EnableIRQ(LETIMER0_IRQn);//adding these interrupts to nested interrupts
 
 }
+
 /****enabling clock and interrupt for GPIO pins***/
 void GPIO_Setup()
 {
@@ -153,10 +156,10 @@ void GPIO_Setup()
 	GPIO_PinModeSet(LIGHT_EXCITE_PORT, LIGHT_EXCITE_PIN,gpioModePushPull,0);
 	GPIO_PinModeSet(LIGHT_SENSE_PORT, LIGHT_SENSE_PIN,gpioModeDisabled,0);
 }
-void ACMP_Setup()
 
+void ACMP_Setup()
 {
-blockSleepMode(EM1);
+  blockSleepMode(EM1);
   const ACMP_Init_TypeDef ACMP0_init =
   {
     false,                              /* Full bias current*/
@@ -264,17 +267,15 @@ void calibrate(void)
 	uint32_t LFXOCOUNT=0X0000;
 	uint32_t ULFRCOCOUNT=0X0000;
 
+        CMU_OscillatorEnable(cmuOsc_LFXO,true,true);
+
+        CMU_ClockEnable(cmuClock_CORELE, true); /* Enable CORELE clock */
+        CMU_ClockSelectSet(cmuClock_LFA,cmuSelect_LFXO); /* Select LFXO as clock source for LFA for EM0 to EM2 */
 
 
-	CMU_OscillatorEnable(cmuOsc_LFXO,true,true);
-
-    CMU_ClockEnable(cmuClock_CORELE, true); /* Enable CORELE clock */
-    CMU_ClockSelectSet(cmuClock_LFA,cmuSelect_LFXO); /* Select LFXO as clock source for LFA for EM0 to EM2 */
-
-
-    /* Select TIMER0 parameters */
-		  TIMER_Init_TypeDef timer0Init =
-		  {
+        /* Select TIMER0 parameters */
+        TIMER_Init_TypeDef timer0Init =
+         {
 		    .enable     = false,
 		    .debugRun   = true,
 		    .prescale   = timerPrescale1,
@@ -286,12 +287,11 @@ void calibrate(void)
 		    .quadModeX4 = false,
 		    .oneShot    = false,
 		    .sync       = false,
-		  };
+        };
 
-
-		  /* Select TIMER1 parameters */
-		  	  TIMER_Init_TypeDef timer1Init =
-		  	  {
+	/* Select TIMER1 parameters */
+        TIMER_Init_TypeDef timer1Init =
+        {
 		  	    .enable     = false,
 		  	    .debugRun   = true,
 		  	    .prescale   = timerPrescale1,
@@ -303,27 +303,21 @@ void calibrate(void)
 		  	    .quadModeX4 = false,
 		  	    .oneShot    = false,
 		  	    .sync       = true,
-		  	  };
+        };
 
+	  //Clear all timer0 and timer1 interrupts
+	  int  IntFlags1=TIMER1->IF;
+           TIMER1->IFC=IntFlags1;
+          int  IntFlags0=TIMER0->IF;
+            TIMER0->IFC=IntFlags0;
 
-		  //Clear all timer0 and timer1 interrupts
-
-		  int  IntFlags1=TIMER1->IF;
-		  TIMER1->IFC=IntFlags1;
-		  int  IntFlags0=TIMER0->IF;
-		  		  TIMER0->IFC=IntFlags0;
-
-
-
-
-		  /* Enable TIMER0 and TIMER1 interrupt vector in NVIC */
-		  NVIC_EnableIRQ(TIMER0_IRQn);
-		  NVIC_EnableIRQ(TIMER1_IRQn);
-
-
-	/* Set configurations for LETIMER 0 */
-		const LETIMER_Init_TypeDef letimerInit =
-		{
+           /* Enable TIMER0 and TIMER1 interrupt vector in NVIC */
+	    NVIC_EnableIRQ(TIMER0_IRQn);
+	    NVIC_EnableIRQ(TIMER1_IRQn);
+ 
+       	   /* Set configurations for LETIMER 0 */
+	   const LETIMER_Init_TypeDef letimerInit =
+	    {
 		.enable = false, /* Start counting when init completed*/
 		.debugRun = false, /* Counter shall not keep running during debug halt. */
 		.rtcComp0Enable = false, /* Start counting on RTC COMP0 match. */
@@ -363,10 +357,9 @@ void calibrate(void)
 		TIMER_Init(TIMER1, &timer1Init);
 
 		//enable timers to start count
-        LETIMER_Enable(LETIMER0, true);
-        TIMER_Enable(TIMER0, true);
-        TIMER_Enable(TIMER1, true);
-
+                LETIMER_Enable(LETIMER0, true);
+                TIMER_Enable(TIMER0, true);
+                TIMER_Enable(TIMER1, true);
 
         while(LETIMER0->CNT!=0x0000);
 
